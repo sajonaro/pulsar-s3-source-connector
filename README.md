@@ -23,6 +23,20 @@ Below parameters are provided as command line parameters via pulsar admin cli ( 
 * install JAVA, Maven
 
 ## steps
+
+0. Emulate s3 and upload files into bucket
+   ```
+   cd s3-setup
+   docker compose up -d
+
+   chmod +x config_aws_once.sh
+   ./config_aws_once.sh
+
+   chmod +x upload_files_to_bucket.sh
+   ./upload_files_to_bucket.sh
+   
+   ```
+
 1. Build custom connector (and copy jar file into broker's folder):
     ```
     cd connector && build_test_copy.sh
@@ -41,5 +55,5 @@ Below parameters are provided as command line parameters via pulsar admin cli ( 
 
 TL/DR; 
 ```
- chmod +x build&start.sh && ./build&start.sh
+ chmod +x build_and_start.sh && ./build_and_start.sh
 ```

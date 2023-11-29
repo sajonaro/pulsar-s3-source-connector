@@ -1,0 +1,41 @@
+version: '3.5'
+
+volumes:
+  s3-data:
+    driver: local
+
+networks:
+  s3-net:
+    driver: bridge
+
+services:
+
+  s3-emulation:
+    image: minio/minio:latest
+    container_name: minio
+    restart: always
+    networks:
+      - s3-net
+    ports:
+      - "9999:9000"
+      - "9001:9001" 
+    environment:  
+      - "MINIO_ROOT_USER=user"
+      - "MINIO_ROOT_PASSWORD=password"  
+    volumes:
+      - s3-data:/data
+    command: server /data --console-address :6001 
+
+  createbucket:
+    image: minio/mc:latest
+    container_name: mc
+    networks:
+      - s3-net
+    depends_on:
+      - s3-emulation
+    entrypoint: >
+      /bin/sh -c "   
+      /usr/bin/mc config host add --api s3v4 s3 http://minio:9999 user password;
+      /usr/bin/mc mb s3/contosobucket/;
+      /usr/bin/mc mb anonymous set download s3/contosobucket; 
+      "
