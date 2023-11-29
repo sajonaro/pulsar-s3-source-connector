@@ -1,20 +1,45 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# Introduction
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+This project explores Pulsar IO framework. We are building a simple S3 source connector and deploying it into a pulsar cluster,
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+The connector (source code in ./connector  folder)  is connecting to S3 via AWS s3 SDK, asynchronously reads all files from bucket line by line and pushes every read line into specified topic.
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+Below parameters are provided as command line parameters via pulsar admin cli ( see enable_connector.sh in ./custom-broker folder for details)
+ * bucketName
+ * region
+ * topic name
+ * tenant
+ * namespace 
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+
+## High level view
+![image](./connector_hl.png)
+
+
+# Build and Test Locally
+
+### prerequisites
+* install docker, docker compose
+* install JAVA, Maven
+
+## steps
+1. Build custom connector (and copy jar file into broker's folder):
+    ```
+    cd connector && build_test_copy.sh
+    ```
+2. Run pulsar stack (in docker) 
+    ```
+    docker compose up -d
+    ```
+
+3. Stop pulsar stack (in docker) 
+    ```
+    docker compose down
+    ```   
+    (caveat: if you made changes/rebuilt the connector, you would need to rebuild custom-broker's image as well)
+
+
+TL/DR; 
+```
+ chmod +x build&start.sh && ./build&start.sh
+```
