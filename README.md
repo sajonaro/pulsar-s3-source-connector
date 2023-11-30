@@ -24,29 +24,19 @@ Below parameters are provided as command line parameters via pulsar admin cli ( 
 
 ## steps
 
-0. Emulate s3 and upload files into bucket
-   ```
-   cd s3-setup
-   docker compose up -d
-
-   chmod +x config_aws_once.sh
-   ./config_aws_once.sh
-
-   chmod +x upload_files_to_bucket.sh
-   ./upload_files_to_bucket.sh
-   
-   ```
+Open command prompt in root directory of the repository, then:
 
 1. Build custom connector (and copy jar file into broker's folder):
     ```
-    cd connector && build_test_copy.sh
+    cd ./connector && build_test_copy.sh
     ```
-2. Run pulsar stack (in docker) 
+    (if above command worked correctly - you should see "Welcome to s3 connector" output in console)
+2. Run pulsar docker stack, from root directory :
     ```
     docker compose up -d
     ```
 
-3. Stop pulsar stack (in docker) 
+3. Stop pulsar stack, from  root directory: 
     ```
     docker compose down
     ```   

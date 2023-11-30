@@ -1,7 +1,9 @@
-version: '3'
+version: '3.5'
+
 networks:
-  pulsar:
+  pulsar-net:
     driver: bridge
+
 volumes:
   zookeeperdata:
     driver: local
@@ -9,14 +11,52 @@ volumes:
     driver: local
   pulsar-manager-data:
     driver: local
+
 services:
+
+  localstack:
+    image: localstack/localstack:1.0.4
+    hostname: localstack
+    networks:
+      - pulsar-net
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3:4566
+      HOSTNAME: localstack
+      HOSTNAME_EXTERNAL: localstack
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: user
+      AWS_SECRET_ACCESS_KEY: password
+
+  aws-cli:
+    image: amazon/aws-cli
+    networks:
+      - pulsar-net
+    depends_on:
+      localstack:
+        condition: service_healthy
+    volumes:
+      - ./s3-setup/csv-files:/aws
+    environment:
+      - AWS_ACCESS_KEY_ID=user
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: /bin/sh -c
+    command: >
+      "
+        aws --endpoint-url=http://localstack:4566 s3api create-bucket --bucket contosobucket --region us-east-1
+        aws --endpoint-url=http://localstack:4566 s3 cp contoso_employees.csv s3://contosobucket/
+        aws --endpoint-url=http://localstack:4566 s3api list-buckets 
+      "
+
   # Start zookeeper
   zookeeper:
     image: zookeeper
     restart: on-failure
     hostname: zookeeper
     networks:
-      - pulsar
+      - pulsar-net
     ports:
       - 2181:2181
     environment:
@@ -39,7 +79,7 @@ services:
       dockerfile: Dockerfile
     restart: no  
     networks:
-      - pulsar
+      - pulsar-net
     command: >
       bin/pulsar initialize-cluster-metadata \
                --cluster s3-connector-poc-cluster \
@@ -59,7 +99,7 @@ services:
     container_name: bookie
     restart: on-failure
     networks:
-      - pulsar
+      - pulsar-net
     environment:
       - clusterName=s3-connector-poc-cluster
       - zkServers=zookeeper:2181
@@ -86,7 +126,7 @@ services:
     hostname: broker
     restart: on-failure
     networks:
-      - pulsar
+      - pulsar-net
     environment:
       - metadataStoreUrl=zk:zookeeper:2181
       - zookeeperServers=zookeeper:2181
@@ -117,7 +157,7 @@ services:
       dockerfile: Dockerfile
     restart: no  
     networks:
-      - pulsar
+      - pulsar-net
     entrypoint: [ "/bin/bash", "-c", "./enable_connector.sh" ]
     depends_on:
       broker:
@@ -131,7 +171,7 @@ services:
     hostname: dashboard
     restart: on-failure
     networks:
-      - pulsar
+      - pulsar-net
     ports:
       - "80:80"
     environment:
@@ -141,13 +181,14 @@ services:
         condition: service_started  
 
 
-  #manager
+  #manager  is available via http://localhost:9527
+  # login/password is admin/apachepulsar  (if init-pulsar-manager executed successfully)
   pulsar-manager:
     image: apachepulsar/pulsar-manager:v0.3.0
     container_name: manager
     hostname: manager
     networks:
-      - pulsar
+      - pulsar-net
     ports:
       - "7750:7750"
       - "9527:9527"
@@ -163,7 +204,7 @@ services:
       context: ./pulsar-manager
       dockerfile: Dockerfile
     networks:
-      - pulsar
+      - pulsar-net
     restart: no
     depends_on:
       pulsar-manager:

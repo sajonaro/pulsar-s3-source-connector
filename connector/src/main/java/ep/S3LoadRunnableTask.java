@@ -59,6 +59,8 @@ public class S3LoadRunnableTask extends Thread {
 
             //push line by line into topic
             for (String line: lines) {
+
+                //provide metadata
                 Map<String, String> properties = new HashMap<>();
                 properties.put("fileName", fileName);
                 properties.put("lineNumber", counter.getAndIncrement() + "");

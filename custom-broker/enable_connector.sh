@@ -9,6 +9,6 @@ bin/pulsar-admin source create \
   --namespace joe_smith_inc_default \
   --name wso_data_source \
   --destination-topic-name wso-data-stream \
-  --source-config '{"bucket-name": "contoso", "region": "us-east-1" }'
+  --source-config '{"bucket-name": "contosobucket", "region": "us-east-1" }'
 
 bin/pulsar-admin source list
