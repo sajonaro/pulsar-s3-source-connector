@@ -41,6 +41,12 @@ Open command prompt in root directory of the repository, then:
     docker compose down
     ```   
     (caveat: if you made changes/rebuilt the connector, you would need to rebuild custom-broker's image as well)
+4.  Visualisations: 
+     - Simple Pulsar dashboard:
+       http://localhost:80
+   
+    - Pulsar manager UI: http://localhost:9527 user: admin, login: apachepulsar
+      BrokerURL - URL where pulsar admin is hosted,in our case: http://broker:8080,  Bookie: http://broker:8080  (as we run pulsar in standalone mode)
 
 
 TL/DR; 

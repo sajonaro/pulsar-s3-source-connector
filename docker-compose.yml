@@ -210,3 +210,26 @@ services:
       pulsar-manager:
         condition: service_started
     entrypoint: [ "/bin/bash", "-c", "./set-login.sh" ]
+
+
+# Trigger the connector to make it work
+# Alternatively, REST AdminAPI can be used 
+  source-connector-trigger:
+    build:
+      context: ./pulsar-manager
+      dockerfile: Dockerfile
+    container_name: connector-trigger
+    restart: no  
+    networks:
+      - pulsar-net
+    command: >
+      bin/pulsar-admin sources start \
+        --tenant joe_smith_inc \
+        --namespace joe_smith_inc_default \
+        --name wso_data_source \
+
+
+    #this is to make sure it runs after all services fired up successfully
+    depends_on:
+      pulsar-manager:
+        condition: service_started
