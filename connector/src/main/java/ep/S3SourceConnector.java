@@ -5,8 +5,11 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.internal.StaticCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,7 +28,7 @@ public class S3SourceConnector extends PushSource<String> {
         logger.info("Starting AWS S3 Source...");
 
         //TODO replace secret management with  sourceContext.getSecret("AWS_ACCESS_KEY")        
-        awsS3client = initS3Client("user",
+        awsS3client = initLocalStackS3Client("user",
                                    "password",
                                    (String)config.get("region"));
 
@@ -42,15 +45,23 @@ public class S3SourceConnector extends PushSource<String> {
         awsS3client.shutdown();
     }
 
-
-    private AmazonS3 initS3Client(String accessKey, String accessSecret, String awsRegion) {
+    private AmazonS3 initLocalStackS3Client(String accessKey, String accessSecret, String awsRegion) {
 
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, accessSecret);
         
         //.withEndpointConfiguration is used only with localstack
         return  AmazonS3ClientBuilder
                 .standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("http://localstack:4566", awsRegion))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("https://s3.localhost.localstack.cloud:4566", awsRegion))
+                .withCredentials(new AWSStaticCredentialsProvider(credentials))
+                .build();
+    }
+
+    private AmazonS3 initS3Client(String accessKey, String accessSecret, String awsRegion) {
+
+        AWSCredentials credentials = new BasicAWSCredentials(accessKey, accessSecret);
+        return  AmazonS3ClientBuilder
+                .standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
                 .withRegion(awsRegion)
                 .build();

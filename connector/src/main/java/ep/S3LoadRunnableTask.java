@@ -42,13 +42,19 @@ public class S3LoadRunnableTask extends Thread {
 
     @Override
     public void run() {
-        logger.info(String.format("Scanning bucket '%s' for files.", bucket));
+        try {
+                logger.info(String.format("Scanning bucket '%s' for files.", bucket));
+                ObjectListing objectListing = awsS3client.listObjects(bucket);
 
-        ObjectListing objectListing = awsS3client.listObjects(bucket);
-        for(S3ObjectSummary os : objectListing.getObjectSummaries()) {
-            logger.info(String.format("Processing file %s", os.getKey()));
-            consumeFile(os.getKey(), this.source);
+            for(S3ObjectSummary os : objectListing.getObjectSummaries()) {
+                logger.info(String.format("Processing file %s", os.getKey()));
+                consumeFile(os.getKey(), this.source);
         }
+        } catch (Exception e) {
+            
+            logger.error( String.format("Error occurred in S3LoadTask, message is %s" ,e.toString()));
+        }
+    
     }
 
     private void consumeFile(String fileName, PushSource<String> source ) {

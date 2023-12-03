@@ -50,119 +50,30 @@ services:
         aws --endpoint-url=http://localstack:4566 s3api list-buckets 
       "
 
-  # Start zookeeper
-  zookeeper:
-    image: zookeeper
-    restart: on-failure
-    hostname: zookeeper
-    networks:
-      - pulsar-net
-    ports:
-      - 2181:2181
-    environment:
-      ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=zookeeper:2888:3888;2181
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    healthcheck:
-      test: bin/zkServer.sh status || exit 1 
-      interval: 10s
-      timeout: 5s
-      retries: 30
-
-# Init cluster metadata
-  pulsar-init:
-    container_name: pulsar-init
-    hostname: pulsar-init
-    build:
-      context: ./custom-broker
-      dockerfile: Dockerfile
-    restart: no  
-    networks:
-      - pulsar-net
-    command: >
-      bin/pulsar initialize-cluster-metadata \
-               --cluster s3-connector-poc-cluster \
-               --zookeeper zookeeper:2181 \
-               --configuration-store zookeeper:2181 \
-               --web-service-url http://broker:8080 \
-               --broker-service-url pulsar://broker:6650
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-
-  # Start bookie
-  bookie:
-    build:
-      context: ./custom-broker
-      dockerfile: Dockerfile
-    container_name: bookie
-    restart: on-failure
-    networks:
-      - pulsar-net
-    environment:
-      - clusterName=s3-connector-poc-cluster
-      - zkServers=zookeeper:2181
-      - metadataServiceUri=metadata-store:zk:zookeeper:2181
-      # otherwise every time we run docker compose uo or down we fail to start due to Cookie
-      # See: https://github.com/apache/bookkeeper/blob/405e72acf42bb1104296447ea8840d805094c787/bookkeeper-server/src/main/java/org/apache/bookkeeper/bookie/Cookie.java#L57-68
-      - advertisedAddress=bookie
-      - BOOKIE_MEM=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-      pulsar-init:
-        condition: service_completed_successfully
-    volumes:
-      - bookkeeperdata:/pulsar/data/bookkeeper
-    command: bash -c "bin/apply-config-from-env.py conf/bookkeeper.conf && exec bin/pulsar bookie"
-
   # Start broker
-  broker:
-    build:
-      context: ./custom-broker
-      dockerfile: Dockerfile
-    container_name: broker
-    hostname: broker
-    restart: on-failure
+  pulsar-server:
+    image: apachepulsar/pulsar-all:3.1.1
+    container_name: pulsar-server
+    hostname: pulsar-server
+    volumes:
+      - ./connector/target/custom-s3-source-connector-0.0.1.jar:/pulsar/connectors/custom-s3-source-connector-0.0.1.jar
+      - ./connector/scripts/enable_connector.sh:/pulsar/enable_connector.sh
+    ports:
+    - 8080:8080
+    - 6650:6650
     networks:
-      - pulsar-net
+    - pulsar-net
+    healthcheck:
+      interval: 10s
+      retries: 20
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8080/admin/v2/clusters/standalone
     environment:
-      - metadataStoreUrl=zk:zookeeper:2181
-      - zookeeperServers=zookeeper:2181
-      - clusterName=s3-connector-poc-cluster
-      - managedLedgerDefaultEnsembleSize=1
-      - managedLedgerDefaultWriteQuorum=1
-      - managedLedgerDefaultAckQuorum=1
-      - advertisedAddress=broker
+      - advertisedAddress=pulsar-server
       - advertisedListeners=external:pulsar://127.0.0.1:6650
       - PULSAR_MEM=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m
-    depends_on:
-      zookeeper:
-        condition: service_healthy
-      bookie:
-        condition: service_started
-    ports:
-      - "6650:6650"
-      - "8080:8080"
-    command: bash -c "bin/apply-config-from-env.py conf/broker.conf && exec bin/pulsar broker && ./enable_connector.sh"
-
-
-  # Init custom- s3 connector
-  pulsar-init-connctor:
-    container_name: s3-connector-init
-    hostname: s3-connector-init
-    build:
-      context: ./custom-broker
-      dockerfile: Dockerfile
-    restart: no  
-    networks:
-      - pulsar-net
-    entrypoint: [ "/bin/bash", "-c", "./enable_connector.sh" ]
-    depends_on:
-      broker:
-        condition: service_started    
-  
+      - functionsWorkerEnabled=true  
+      - authorizationAllowWildcardsMatching=true 
+    command: bash -c "bin/apply-config-from-env.py conf/standalone.conf && exec bin/pulsar standalone "
 
   #dashboard
   pulsar-dashboard:
@@ -175,16 +86,17 @@ services:
     ports:
       - "80:80"
     environment:
-      SERVICE_URL: http://broker:8080/
+      SERVICE_URL: http://pulsar-server:8080/
     depends_on:
-      broker:
-        condition: service_started  
-
+      pulsar-server:
+        condition: service_healthy
 
   #manager  is available via http://localhost:9527
-  # login/password is admin/apachepulsar  (if init-pulsar-manager executed successfully)
+  # login/password is admin/apachepulsar  (if set-login.sh executed successfully)
   pulsar-manager:
-    image: apachepulsar/pulsar-manager:v0.3.0
+    build:
+      context: ./pulsar-manager
+      dockerfile: Dockerfile
     container_name: manager
     hostname: manager
     networks:
@@ -193,43 +105,7 @@ services:
       - "7750:7750"
       - "9527:9527"
     depends_on:
-      broker:
-        condition: service_started  
+      pulsar-server:
+        condition: service_healthy
     environment:
-      SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties      
-
-  #just to create admin/apachepulsar  login/pwd in manager
-  init-pulsar-manager:
-    build:
-      context: ./pulsar-manager
-      dockerfile: Dockerfile
-    networks:
-      - pulsar-net
-    restart: no
-    depends_on:
-      pulsar-manager:
-        condition: service_started
-    entrypoint: [ "/bin/bash", "-c", "./set-login.sh" ]
-
-
-# Trigger the connector to make it work
-# Alternatively, REST AdminAPI can be used 
-  source-connector-trigger:
-    build:
-      context: ./pulsar-manager
-      dockerfile: Dockerfile
-    container_name: connector-trigger
-    restart: no  
-    networks:
-      - pulsar-net
-    command: >
-      bin/pulsar-admin sources start \
-        --tenant joe_smith_inc \
-        --namespace joe_smith_inc_default \
-        --name wso_data_source \
-
-
-    #this is to make sure it runs after all services fired up successfully
-    depends_on:
-      pulsar-manager:
-        condition: service_started
+      SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties 
