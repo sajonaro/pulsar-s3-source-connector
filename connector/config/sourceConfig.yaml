@@ -1,4 +1,6 @@
 {
    "bucket-name": "contosobucket",
-   "region": "us-east-1"
+   "region": "us-east-1",
+   "accessSecret": "password",
+   "accessKey": "user",
 }

@@ -5,9 +5,12 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
 import com.amazonaws.internal.StaticCredentialsProvider;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.Bucket;
 
 import java.net.URI;
 import java.util.Map;
@@ -27,12 +30,20 @@ public class S3SourceConnector extends PushSource<String> {
         logger = sourceContext.getLogger();
         logger.info("Starting AWS S3 Source...");
 
-        //TODO replace secret management with  sourceContext.getSecret("AWS_ACCESS_KEY")        
-        awsS3client = initLocalStackS3Client("user",
-                                   "password",
-                                   (String)config.get("region"));
+         String bucketName = (String)config.get("bucket-name");
+         String secret = (String)config.get("accessSecret");
+         String key = (String)config.get("accessKey");
+         String region = (String)config.get("region");
+         String localstackURL = (String)config.get("LOCALSTACK_URL");
 
-        String bucketName = (String)config.get("bucket-name");
+
+       
+        if(localstackURL != ""){
+            logger.info(String.format("Localstack URL is: %s", localstackURL));       
+            awsS3client = initLocalStackS3Client(key,secret,region,localstackURL);
+        }
+        else
+           awsS3client = initS3Client(key, secret, region);
 
         Runnable task = new S3LoadRunnableTask(this, sourceContext, awsS3client, bucketName, logger);
         executorService.submit(task);
@@ -45,14 +56,14 @@ public class S3SourceConnector extends PushSource<String> {
         awsS3client.shutdown();
     }
 
-    private AmazonS3 initLocalStackS3Client(String accessKey, String accessSecret, String awsRegion) {
+    private AmazonS3 initLocalStackS3Client(String accessKey, String accessSecret, String awsRegion, String endpointURL) {
 
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, accessSecret);
         
         //.withEndpointConfiguration is used only with localstack
         return  AmazonS3ClientBuilder
                 .standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("https://s3.localhost.localstack.cloud:4566", awsRegion))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpointURL, awsRegion))
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
                 .build();
     }
@@ -70,5 +81,6 @@ public class S3SourceConnector extends PushSource<String> {
 	public static void main(String[] args) {
 		LocalTime currentTime = new LocalTime();
 		System.out.println("Welcome to s3 connector, the current local time is: " + currentTime);
+ 
 	}
 }

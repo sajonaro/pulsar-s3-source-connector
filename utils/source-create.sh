@@ -7,4 +7,4 @@ docker compose exec -i pulsar-server  bin/pulsar-admin  sources create  \
   --namespace default  \
   --name wso_data_source  \
   --destination-topic-name wso-data-stream   \
-  --source-config '{"bucket-name": "contosobucket", "region": "us-east-1" }' 
+  --source-config '{"bucket-name": "contosobucket", "region": "us-east-1", "LOCALSTACK_URL": "http://10.5.0.2:4566", "accessSecret": "password", "accessKey": "user" }' 

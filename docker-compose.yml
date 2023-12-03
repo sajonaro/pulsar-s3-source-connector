@@ -3,6 +3,10 @@ version: '3.5'
 networks:
   pulsar-net:
     driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1 
 
 volumes:
   zookeeperdata:
@@ -18,7 +22,8 @@ services:
     image: localstack/localstack:1.0.4
     hostname: localstack
     networks:
-      - pulsar-net
+      pulsar-net:
+        ipv4_address: 10.5.0.2 
     ports:
       - "4566:4566"
     environment:
@@ -32,7 +37,8 @@ services:
   aws-cli:
     image: amazon/aws-cli
     networks:
-      - pulsar-net
+      pulsar-net:
+        ipv4_address: 10.5.0.3 
     depends_on:
       localstack:
         condition: service_healthy
@@ -62,7 +68,8 @@ services:
     - 8080:8080
     - 6650:6650
     networks:
-    - pulsar-net
+      pulsar-net:
+        ipv4_address: 10.5.0.4 
     healthcheck:
       interval: 10s
       retries: 20
@@ -72,7 +79,7 @@ services:
       - advertisedListeners=external:pulsar://127.0.0.1:6650
       - PULSAR_MEM=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m
       - functionsWorkerEnabled=true  
-      - authorizationAllowWildcardsMatching=true 
+      - authorizationAllowWildcardsMatching=true
     command: bash -c "bin/apply-config-from-env.py conf/standalone.conf && exec bin/pulsar standalone "
 
   #dashboard
@@ -82,7 +89,8 @@ services:
     hostname: dashboard
     restart: on-failure
     networks:
-      - pulsar-net
+      pulsar-net:
+        ipv4_address: 10.5.0.5 
     ports:
       - "80:80"
     environment:
@@ -100,7 +108,8 @@ services:
     container_name: manager
     hostname: manager
     networks:
-      - pulsar-net
+      pulsar-net:
+        ipv4_address: 10.5.0.6
     ports:
       - "7750:7750"
       - "9527:9527"
