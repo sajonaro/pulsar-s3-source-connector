@@ -1,0 +1,8 @@
+tenant: "public"
+namespace: "default"
+inputs: [ "persistent://public/default/buck1","persistent://public/default/buck2","persistent://public/default/buck3","persistent://public/default/buck4","persistent://public/default/buck5"]
+configs:
+  userName: usr
+  password: 1234567
+  jdbcUrl: jdbc:postgresql://10.5.0.7:5432/postgres",
+  tableName: pulsar_postgres_jdbc_sink

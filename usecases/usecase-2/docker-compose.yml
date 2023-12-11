@@ -1,0 +1,172 @@
+version: '3.5'
+
+networks:
+  pulsar-net:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1 
+        
+
+volumes:
+  zookeeperdata:
+    driver: local
+  bookkeeperdata:
+    driver: local
+  pulsar-manager-data:
+    driver: local
+  sink-db:
+    driver: local  
+
+services:
+
+  localstack:
+    image: localstack/localstack:1.0.4
+    hostname: localstack
+    networks:
+      pulsar-net:
+        ipv4_address: 10.5.0.2 
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3:4566
+      HOSTNAME: localstack
+      HOSTNAME_EXTERNAL: localstack
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: user
+      AWS_SECRET_ACCESS_KEY: password
+
+  aws-cli:
+    image: amazon/aws-cli
+    networks:
+      pulsar-net:
+        ipv4_address: 10.5.0.3 
+    depends_on:
+      localstack:
+        condition: service_healthy
+    volumes:
+      - ./s3-setup:/aws
+    environment:
+      - AWS_ACCESS_KEY_ID=user
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: /bin/sh -c
+    command: >
+      "
+        aws --endpoint-url=http://localstack:4566 s3api create-bucket --bucket buck1 --region us-east-1
+        aws --endpoint-url=http://localstack:4566 s3api create-bucket --bucket buck2 --region us-east-1
+        aws --endpoint-url=http://localstack:4566 s3api create-bucket --bucket buck3 --region us-east-1
+        aws --endpoint-url=http://localstack:4566 s3api create-bucket --bucket buck4 --region us-east-1
+        aws --endpoint-url=http://localstack:4566 s3api create-bucket --bucket buck5 --region us-east-1
+         
+        aws --endpoint-url=http://localstack:4566 s3 cp ./source-files s3://buck1/ --recursive
+        aws --endpoint-url=http://localstack:4566 s3 cp ./source-files s3://buck2/ --recursive
+        aws --endpoint-url=http://localstack:4566 s3 cp ./source-files s3://buck3/ --recursive
+        aws --endpoint-url=http://localstack:4566 s3 cp ./source-files s3://buck4/ --recursive
+        aws --endpoint-url=http://localstack:4566 s3 cp ./source-files s3://buck5/ --recursive
+
+        aws --endpoint-url=http://localstack:4566 s3api list-buckets 
+      "
+
+  # Start broker
+  pulsar-server:
+    image: apachepulsar/pulsar-all:3.1.1
+    container_name: pulsar-server
+    hostname: pulsar-server
+    volumes:
+      - ../../functions/s3-function/target/s3-download-function-0.0.1.jar:/pulsar/connectors/s3-download-function-0.0.1.jar
+      - ./sink-db/sink-config.yaml:/pulsar/conf/sink-config.yaml
+    ports:
+    - 8080:8080
+    - 6650:6650
+    networks:
+      pulsar-net:
+        ipv4_address: 10.5.0.4 
+    healthcheck:
+      interval: 10s
+      retries: 20
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8080/admin/v2/clusters/standalone
+    environment:
+      - advertisedAddress=pulsar-server
+      - webServicePort=8080
+      - webServiceHost=pulsar-server
+      - brokerServicePort=6650
+      - webServiceEnabled=true
+      - advertisedListeners=external:pulsar://pulsar-server:6650
+      - PULSAR_MEM=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m
+      - functionsWorkerEnabled=true 
+      - authorizationAllowAnonymous=true
+    command: bash -c "bin/apply-config-from-env.py conf/standalone.conf && exec bin/pulsar standalone "
+
+  #dashboard
+  pulsar-dashboard:
+    image: apachepulsar/pulsar-dashboard
+    container_name: dashboard
+    hostname: dashboard
+    restart: on-failure
+    networks:
+      pulsar-net:
+        ipv4_address: 10.5.0.5 
+    ports:
+      - "80:80"
+    environment:
+      SERVICE_URL: http://pulsar-server:8080/
+    depends_on:
+      pulsar-server:
+        condition: service_healthy
+
+  #manager  is available via http://localhost:9527
+  # login/password is admin/apachepulsar  (if set-login.sh executed successfully)
+  pulsar-manager:
+    build:
+      context: ./pulsar-manager
+      dockerfile: Dockerfile
+    container_name: manager
+    hostname: manager
+    networks:
+      pulsar-net:
+        ipv4_address: 10.5.0.6
+    ports:
+      - "7750:7750"
+      - "9527:9527"
+    depends_on:
+      pulsar-server:
+        condition: service_healthy
+    environment:
+      SPRING_CONFIGURATION_FILE: /pulsar-manager/pulsar-manager/application.properties 
+
+
+  database:
+    build: 
+      context: ./sink-db
+      dockerfile: Dockerfile
+    container_name: POSTGRES_DB
+    restart: always
+    depends_on:
+      - aws-cli
+    networks:
+      pulsar-net:
+        ipv4_address: 10.5.0.7
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: usr
+      POSTGRES_PASSWORD: 1234567
+    volumes:
+      - sink-db:/var/lib/postgresql/data  
+
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: always
+    depends_on:
+      - database
+    networks:
+      pulsar-net:
+        ipv4_address: 10.5.0.8
+    ports:
+      - "8082:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: POSTGRES_DB:5432  

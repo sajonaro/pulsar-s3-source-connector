@@ -1,14 +1,8 @@
 #!/usr/bin/env bash
 
-cd ./connector 
-
-./build_test_copy.sh 
-
-cd ..
+../../connectors/sources/s3-custom-source/mvn clean package
 
 docker compose up -d
-
-cd ./utils
 
 ./set-login-from-cli.sh
 

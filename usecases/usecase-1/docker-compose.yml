@@ -62,8 +62,7 @@ services:
     container_name: pulsar-server
     hostname: pulsar-server
     volumes:
-      - ./connector/target/custom-s3-source-connector-0.0.1.jar:/pulsar/connectors/custom-s3-source-connector-0.0.1.jar
-      - ./connector/scripts/enable_connector.sh:/pulsar/enable_connector.sh
+      - ../../connectors/sources/s3-custom-source/target/custom-s3-source-connector-0.0.1.jar:/pulsar/connectors/custom-s3-source-connector-0.0.1.jar
     ports:
     - 8080:8080
     - 6650:6650
