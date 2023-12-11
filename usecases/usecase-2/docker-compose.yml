@@ -120,7 +120,7 @@ services:
   # login/password is admin/apachepulsar  (if set-login.sh executed successfully)
   pulsar-manager:
     build:
-      context: ./pulsar-manager
+      context: ../../pulsar-manager
       dockerfile: Dockerfile
     container_name: manager
     hostname: manager

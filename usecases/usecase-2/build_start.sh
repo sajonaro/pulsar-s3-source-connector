@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
 
-#(re)build s3-download-function
-../../connectors/sources/s3-custom-source/mvn clean package
-
-#stand up the instrastructure
-docker compose up -d
-
-
 
 echo 'create topics:  bucket-names, b1..bn' 
 docker compose exec  pulsar-server  bin/pulsar-admin --admin-url http://localhost:8080 \
@@ -36,10 +29,13 @@ docker compose exec -i pulsar-server  bin/pulsar-admin  functions create  \
   --name s3-downloader  \
   --parallelism 3 \
   --inputs public/default/bucket-names \
-  --user-config '{"region": "us-east-1", "LOCALSTACK_URL": "http://10.5.0.2:4566", "accessSecret": "password", "accessKey": "user" }' 
+  --user-config '{"region": "us-east-1", "LOCALSTACK_URL": "http://10.5.0.2:4566", "accessSecret": "password", "accessKey": "user" }' \
+  --dead-letter-topic persistent://public/default/dlq-topic \
+  --max-message-retries 3 
+  
 
 
-echo 'creating Posgresql sink'
+echo 'create & start  Posgresql sink'
 docker compose exec -i pulsar-server  bin/pulsar-admin  sinks create  \
   --archive ./connectors/pulsar-io-jdbc-postgres-3.1.1.nar \
   --tenant public  \
@@ -48,6 +44,10 @@ docker compose exec -i pulsar-server  bin/pulsar-admin  sinks create  \
   --sink-config-file /pulsar/conf/sink-config.yaml  \
   --parallelism 1
 
+docker compose exec pulsar-server  \
+    bin/pulsar-admin  sinks start \
+            --name db-sink 
 
-echo 'ccheck the status of s3 downloader function'
+
+echo 'check the status of s3 downloader function'
 docker compose exec pulsar-server  bin/pulsar-admin functions status --name s3-downloader

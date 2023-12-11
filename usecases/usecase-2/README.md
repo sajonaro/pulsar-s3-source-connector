@@ -47,6 +47,7 @@ Open command prompt in root directory of the repository, then:
 1. create and run the infrastructure
 
     ```
+    ./build_deploy.sh 
     ./build_and_start.sh 
     ```
 2. publish bucket name to bucket-names topic e.g.:
