@@ -4,12 +4,19 @@ This project explores Pulsar IO framework. We are building a simple S3 source co
 
 The connector (source code in ./connector  folder)  is connecting to S3 via AWS s3 SDK, asynchronously reads all files from bucket line by line and pushes every read line into specified topic.
 
-Below parameters are provided as command line parameters via pulsar admin cli ( see enable_connector.sh in ./custom-broker folder for details)
- * bucketName
- * region
- * topic name
- * tenant
- * namespace 
+Below command creates (deploys) the connector into pulsar: 
+```
+docker compose exec -i pulsar-server  bin/pulsar-admin  sources create  \
+  --archive /pulsar/connectors/custom-s3-source-connector-0.0.1.jar \
+  --classname ep.S3SourceConnector \
+  --tenant public  \
+  --namespace default  \
+  --name wso_data_source  \
+  --destination-topic-name wso-data-stream   \
+  --source-config '{"bucket-name": "contosobucket", "region": "us-east-1", "LOCALSTACK_URL": "http://10.5.0.2:4566", "accessSecret": "password", "accessKey": "user" }'
+ ```
+
+
 
 
 ## High level view
@@ -24,46 +31,20 @@ Below parameters are provided as command line parameters via pulsar admin cli ( 
 
 ## steps
 
-Open command prompt in root directory of the repository, then:
+1. Build and run the example :
+```
+    ./build_and_start.sh
+```
+2. check the results of connector's job :
+ ```
+    ./check-topic-cli.sh
+ ```
 
-1. Build custom connector (and copy jar file into broker's folder):
-    ```
-    cd ./connector && build_test_copy.sh
-    ```
-    (if above command worked correctly - you should see "Welcome to s3 connector" output in console)
-2. Run pulsar docker stack, from root directory :
-    ```
-    docker compose up -d
-    ```
-3. enable connector:
-    ```
-    cd utils
-    ./enable_connector.sh
-    ```
-4. start connector:
-    ```
-    cd utils
-    ./start-connector.sh
-    ```
-5. Run pulsar docker stack, from root directory :
-    ```
-    docker compose up -d
-    ```        
-
-6. Stop pulsar stack, from  root directory: 
-    ```
-    docker compose down
-    ```   
-    (caveat: if you made changes/rebuilt the connector, you would need to rebuild custom-broker's image as well)
-7.  Visualisations: 
-     - Simple Pulsar dashboard:
+### Visualisations: 
+- Simple Pulsar dashboard:
        http://localhost:80
    
-    - Pulsar manager UI: http://localhost:9527 user: admin, login: apachepulsar  (to configure login/password - execute script ./utils/set-login-from-cli.sh)
+- Pulsar manager UI: http://localhost:9527 user: admin, login: apachepulsar  (to configure login/password - execute script ./utils/set-login-from-cli.sh)
       BrokerURL - URL where pulsar admin is hosted,in our case: http://pulsar-manager:8080,  Bookie: http://pulsar-manager:8080  (as we run pulsar in standalone mode) 
 
 
-TL/DR; 
-```
- chmod +x build_and_start.sh && ./build_and_start.sh
-```
