@@ -5,7 +5,7 @@ This project explores Pulsar IO framework.
 ## use case 1 
 
 ![image](./usecases/usecase-1/connector_hl.png)
-[more details](./scripts/usecase-1/README.md)
+[more details](./usecases/usecase-1/README.md)
  
 ## use case 2 
 
