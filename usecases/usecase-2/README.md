@@ -1,6 +1,6 @@
 ##  Introduction
 
-We download files from s3 bucket via a fleet of functions 
+We download files from s3 bucket via a fleet of functions running in parallel
 
 ## High level view
 ![image](./fan-out-s3.png)
@@ -44,44 +44,26 @@ docker compose exec -i pulsar-server  bin/pulsar-admin  sinks create  \
 
 Open command prompt in root directory of the repository, then:
 
-1. Build custom connector (and copy jar file into broker's folder):
-    ```
-    cd ./connector && build_test_copy.sh
-    ```
-    (if above command worked correctly - you should see "Welcome to s3 connector" output in console)
-2. Run pulsar docker stack, from root directory :
-    ```
-    docker compose up -d
-    ```
-3. enable connector:
-    ```
-    cd utils
-    ./enable_connector.sh
-    ```
-4. start connector:
-    ```
-    cd utils
-    ./start-connector.sh
-    ```
-5. Run pulsar docker stack, from root directory :
-    ```
-    docker compose up -d
-    ```        
+1. create and run the infrastructure
 
-6. Stop pulsar stack, from  root directory: 
     ```
-    docker compose down
-    ```   
-    (caveat: if you made changes/rebuilt the connector, you would need to rebuild custom-broker's image as well)
-7.  Visualisations: 
-     - Simple Pulsar dashboard:
+    ./build_and_start.sh 
+    ```
+2. publish bucket name to bucket-names topic e.g.:
+    ```
+   ./publish-test-cli.sh buck3
+    ```
+4. check how topic buck3 was populated by io function:
+    ```
+    ./subscribe-test-cli.sh buck3
+    ```
+5. Optionally open sink db (via adminer ui) to see how connectors work: http//:localhost:8082
+
+
+###  Pulsar Visualisations: 
+  - Simple Pulsar dashboard:
        http://localhost:80
    
-    - Pulsar manager UI: http://localhost:9527 user: admin, login: apachepulsar  (to configure login/password - execute script ./utils/set-login-from-cli.sh)
+  - Pulsar manager UI: http://localhost:9527 user: admin, login: apachepulsar  (to configure login/password - execute script ./utils/set-login-from-cli.sh)
       BrokerURL - URL where pulsar admin is hosted,in our case: http://pulsar-manager:8080,  Bookie: http://pulsar-manager:8080  (as we run pulsar in standalone mode) 
 
-
-TL/DR; 
-```
- chmod +x build_and_start.sh && ./build_and_start.sh
-```
