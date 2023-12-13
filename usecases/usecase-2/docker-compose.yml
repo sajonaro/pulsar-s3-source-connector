@@ -77,6 +77,7 @@ services:
     volumes:
       - ../../functions/s3-function/target/s3-download-function-0.0.1.jar:/pulsar/connectors/s3-download-function-0.0.1.jar
       - ./sink-db/sink-config.yaml:/pulsar/conf/sink-config.yaml
+      - ./sink-db/json-schema:/pulsar/conf/json-schema
     ports:
     - 8080:8080
     - 6650:6650
@@ -138,9 +139,7 @@ services:
 
 
   database:
-    build: 
-      context: ./sink-db
-      dockerfile: Dockerfile
+    image: postgres:16
     container_name: POSTGRES_DB
     restart: always
     depends_on:
@@ -151,10 +150,11 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: postgres
+      POSTGRES_DB: sinkdb
       POSTGRES_USER: usr
       POSTGRES_PASSWORD: 1234567
     volumes:
+      - ./sink-db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - sink-db:/var/lib/postgresql/data  
 
   adminer:

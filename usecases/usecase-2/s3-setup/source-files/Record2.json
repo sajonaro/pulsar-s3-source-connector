@@ -1,0 +1,8 @@
+{
+    "Entity": 	42,
+    "Attribute": "user/favorite-color",
+    "Value": "red",
+    "Transaction": 	1233,
+    "AddedRetractedFlag": "false"
+
+}

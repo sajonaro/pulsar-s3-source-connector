@@ -1,0 +1,10 @@
+  
+{ "type": "STRING",
+  "schema": "",
+  "properties": {
+    "Entity": "int",
+    "Attribute": "string",
+    "Value": "string",
+    "Transaction": "int",
+    "AddedRetractedFlag": "boolean"
+}}

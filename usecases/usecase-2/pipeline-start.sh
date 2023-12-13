@@ -5,20 +5,26 @@ echo 'create topics:  bucket-names, b1..bn'
 docker compose exec  pulsar-server  bin/pulsar-admin --admin-url http://localhost:8080 \
  topics create persistent://public/default/bucket-names
 
+
 docker compose exec pulsar-server  bin/pulsar-admin --admin-url http://localhost:8080 \
  topics create persistent://public/default/buck1
+docker compose exec pulsar-server  bin/pulsar-admin schemas upload persistent://public/default/buck1 -f /pulsar/conf/json-schema
 
 docker compose exec  pulsar-server  bin/pulsar-admin --admin-url http://localhost:8080 \
  topics create persistent://public/default/buck2
+docker compose exec pulsar-server  bin/pulsar-admin schemas upload persistent://public/default/buck1 -f /pulsar/conf/json-schema
 
 docker compose exec  pulsar-server  bin/pulsar-admin --admin-url http://localhost:8080 \
  topics create persistent://public/default/buck3
+docker compose exec pulsar-server  bin/pulsar-admin schemas upload persistent://public/default/buck1 -f /pulsar/conf/json-schema 
+
 docker compose exec  pulsar-server  bin/pulsar-admin --admin-url http://localhost:8080 \
  topics create persistent://public/default/buck4
+docker compose exec pulsar-server  bin/pulsar-admin schemas upload persistent://public/default/buck1 -f /pulsar/conf/json-schema
 
 docker compose exec  pulsar-server  bin/pulsar-admin --admin-url http://localhost:8080 \
  topics create persistent://public/default/buck5
-
+docker compose exec pulsar-server  bin/pulsar-admin schemas upload persistent://public/default/buck1 -f /pulsar/conf/json-schema
 
 echo 'create S3 downloaders' 
 docker compose exec -i pulsar-server  bin/pulsar-admin  functions create  \
