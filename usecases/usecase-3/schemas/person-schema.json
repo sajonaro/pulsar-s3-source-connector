@@ -1,0 +1,5 @@
+{
+    "type": "JSON",
+    "schema": "{\"type\": \"record\", \"name\": \"Person\", \"namespace\": \"com.example\", \"fields\": [{\"name\": \"Name\", \"type\": \"string\"}, {\"name\": \"Age\", \"type\": \"int\"}]}",
+    "properties": {}
+}

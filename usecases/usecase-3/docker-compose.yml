@@ -1,0 +1,39 @@
+version: '3.5'
+
+services:
+  
+  pulsar-server:
+    image: apachepulsar/pulsar-all:3.1.1
+    container_name: pulsar-server
+    hostname: pulsar-server-container
+    volumes:
+      - ./schemas:/pulsar/conf/json-schema
+    ports:
+    - 8080:8080
+    - 6650:6650
+    healthcheck:
+      interval: 10s
+      retries: 20
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8080/admin/v2/clusters/standalone
+    environment:
+      - advertisedAddress=pulsar-server
+      - webServicePort=8080
+      - webServiceHost=pulsar-server
+      - brokerServicePort=6650
+      - webServiceEnabled=true
+      - advertisedListeners=external:pulsar://pulsar-server:6650
+      - PULSAR_MEM=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=256m
+      - functionsWorkerEnabled=true 
+      - authorizationAllowAnonymous=true
+    command: bash -c "bin/apply-config-from-env.py conf/standalone.conf && exec bin/pulsar standalone "
+
+
+  swagger-ui:
+   image: swaggerapi/swagger-ui
+   container_name: swagger-ui-container
+   ports:
+    - "80:8080"
+   volumes:
+    - ${PWD}://usr/share/nginx/html/api
+   environment:
+     URLS: "[{ url: \"api/pulsar-api-def.yaml\", name: \"pulsar admin API\" }]" 

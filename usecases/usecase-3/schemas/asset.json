@@ -1,0 +1,8 @@
+{
+    "name": "Example Asset",
+    "description": "This is an example asset",
+    "tags": ["tag1", "tag2"],
+    "metadata": {
+        "createdBy": "Joe Schmo"
+    }
+}

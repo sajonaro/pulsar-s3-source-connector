@@ -1,0 +1,313 @@
+openapi: 3.0.0
+info:
+  description: This provides the REST API for admin operations
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Pulsar Admin REST API
+  version: v2
+servers:
+  - url: http://localhost:8080/admin/v2/
+    description: local pulsar cluster's admin URL  
+paths:
+ /schemas/{tenant}/{namespace}/{topic}/schema/:
+    delete:
+      description: ''
+      operationId: SchemasResource_deleteSchema
+      parameters:
+      - in: path
+        name: tenant
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: namespace
+        required: true
+        schema: 
+          type: string
+      - in: path
+        name: topic
+        required: true
+        schema:
+          type: string
+          default: false
+      - in: query
+        name: authoritative
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - in: query
+        name: force
+        required: false
+        schema:  
+          type: boolean
+      responses:
+        default:
+         description: successful operation
+         content:
+           application/json:
+            schema:
+              "$ref": "#/components/schemas/DeleteSchemaResponse"
+        '307':
+          description: Current broker doesn't serve the namespace of this topic
+        '401':
+          description: Client is not authorized or Don't have admin permission
+        '403':
+          description: Client is not authenticated
+        '404':
+          description: Tenant or Namespace or Topic doesn't exist
+        '412':
+          description: Failed to find the ownership for the topic
+        '500':
+          description: Internal Server Error
+      summary: Delete all versions schema of a topic
+      tags:
+      - schemas
+    get:
+      description: ''
+      operationId: SchemasResource_getSchema
+      parameters:
+      - in: path
+        name: tenant
+        required: true
+        schema:
+          type: string
+          default: public
+      - in: path
+        name: namespace
+        required: true
+        schema:
+          type: string
+          default: default 
+      - in: path
+        name: topic
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: authoritative
+        required: false
+        schema:
+          type: boolean
+          default: false
+      responses:
+        default:
+         description: successful operation
+         content:
+           application/json:
+            schema:
+              "$ref": "#/components/schemas/GetSchemaResponse"
+        '307':
+          description: Current broker doesn't serve the namespace of this topic
+        '401':
+          description: Client is not authorized or Don't have admin permission
+        '403':
+          description: Client is not authenticated
+        '404':
+          description: Tenant or Namespace or Topic doesn't exist; or Schema is not
+            found for this topic
+        '412':
+          description: Failed to find the ownership for the topic
+        '500':
+          description: Internal Server Error
+      summary: Get the schema of a topic
+      tags:
+      - schemas
+    post:
+      description: ''
+      operationId: SchemasResource_postSchema
+      parameters:
+      - in: path
+        name: tenant
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: namespace
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: topic
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: authoritative
+        required: false
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        description: schema description payload
+        x-examples:
+          application/json: '{"type": "STRING", "schema": "", "properties": { "key1"
+            : "value1" + } }'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostSchemaPayload'   
+      responses:
+        default:
+         description: successful operation
+         content:
+           application/json:
+            schema:
+              "$ref": "#/components/schemas/PostSchemaResponse"
+        '307':
+          description: Current broker doesn't serve the namespace of this topic
+        '401':
+          description: Client is not authorized or Don't have admin permission
+        '403':
+          description: Client is not authenticated
+        '404':
+          description: Tenant or Namespace or Topic doesn't exist
+        '409':
+          description: Incompatible schema
+        '412':
+          description: Failed to find the ownership for the topic
+        '422':
+          description: Invalid schema data
+        '500':
+          description: Internal Server Error
+      summary: Update the schema of a topic
+      tags:
+      - schemas
+ /clusters/standalone/:
+    get:
+      description: 'this is a test to know if our pulsar cluster \"standalone\" is running'
+      operationId: ClustersResource_getCluster
+      responses:
+        default:
+         description: successful operation
+         content:
+           application/json:
+            schema:
+              "$ref": "#/components/schemas/ClusterData"
+        '401':
+          description: Client is not authorized or Don't have admin permission
+        '403':
+          description: Client is not authenticated
+        '404':
+          description: Cluster doesn't exist
+        '500':
+          description: Internal Server Error
+      summary: Get the configuration data for a cluster
+      tags:
+      - clusters
+    
+components:
+  schemas:
+    SchemaVersion:
+      type: object
+    PostSchemaPayload:
+      properties:
+        properties:
+          additionalProperties:
+            type: string
+          type: object
+        schema:
+          type: string
+        type:
+          type: string
+      type: object
+    PostSchemaResponse:
+      properties:
+        version:
+         "$ref": "#/components/schemas/SchemaVersion"
+      type: object
+    IsCompatibilityResponse:
+      properties:
+        compatibility:
+          type: boolean
+        schemaCompatibilityStrategy:
+          type: string
+      type: object
+    LongSchemaVersion:
+      properties:
+        version:
+          format: int64
+          type: integer
+      type: object
+    GetAllVersionsSchemaResponse:
+      properties:
+        getSchemaResponses:
+          items:
+            "$ref": "#/components/schemas/GetSchemaResponse"
+          type: array
+      type: object
+    DeleteSchemaResponse:
+      properties:
+        version:
+          format: int64
+          type: integer
+      type: object  
+    GetSchemaResponse:
+      properties:
+        data:
+          type: string
+        properties:
+          additionalProperties:
+            type: string
+          type: object
+        timestamp:
+          format: int64
+          type: integer
+        type:
+          enum:
+          - NONE
+          - STRING
+          - JSON
+          - PROTOBUF
+          - AVRO
+          - BOOLEAN
+          - INT8
+          - INT16
+          - INT32
+          - INT64
+          - FLOAT
+          - DOUBLE
+          - DATE
+          - TIME
+          - TIMESTAMP
+          - KEY_VALUE
+          - INSTANT
+          - LOCAL_DATE
+          - LOCAL_TIME
+          - LOCAL_DATE_TIME
+          - PROTOBUF_NATIVE
+          - BYTES
+          - AUTO
+          - AUTO_CONSUME
+          - AUTO_PUBLISH
+          type: string
+        version:
+          format: int64
+          type: integer
+      type: object
+    ClusterData:
+      properties:
+        brokerServiceUrl:
+          type: string
+        brokerServiceUrlTls:
+          type: string
+        cluster:
+          type: string
+        httpUrl:
+          type: string
+        httpUrlTls:
+          type: string
+        metadataServiceUrl:
+          type: string
+        metadataServiceUrlTls:
+          type: string
+        peerClusterNames:
+          items:
+            type: string
+          type: array
+        serviceUrl:
+          type: string
+        serviceUrlTls:
+          type: string
+      type: object             

@@ -1,0 +1,7 @@
+{
+    "type": "JSON",
+    "schema":  "{\"type\":\"record\",\"name\":\"ExampleAsset\",\"namespace\":\"com.example\",\"fields\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"description\",\"type\":\"string\"},{\"name\":\"tags\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"metadata\",\"type\":{\"type\":\"record\",\"name\":\"Metadata\",\"fields\":[{\"name\":\"createdBy\",\"type\":\"string\"}]}}]}",
+    "properties": {}
+}
+
+
