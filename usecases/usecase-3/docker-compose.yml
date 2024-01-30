@@ -37,3 +37,35 @@ services:
     - ${PWD}://usr/share/nginx/html/api
    environment:
      URLS: "[{ url: \"api/pulsar-api-def.yaml\", name: \"pulsar admin API\" }]" 
+
+
+
+  dotnet-consumer-1:
+    build:
+      context: ./dotnetconsumer
+      dockerfile: Dockerfile
+    container_name: dotnet-consumer-container-people
+    depends_on:
+      pulsar-server:
+        condition: service_healthy
+    environment:
+      - TENANT=public
+      - NAMESPACE=default
+      - TOPIC_NAME=people
+      - PULSAR_HOST=pulsar-server
+
+
+  
+  dotnet-consumer-2:
+    build:
+      context: ./dotnetconsumer
+      dockerfile: Dockerfile
+    container_name: dotnet-consumer-container-assets
+    depends_on:
+      pulsar-server:
+        condition: service_healthy
+    environment:
+      - TENANT=public
+      - NAMESPACE=default
+      - TOPIC_NAME=assets
+      - PULSAR_HOST=pulsar-server  

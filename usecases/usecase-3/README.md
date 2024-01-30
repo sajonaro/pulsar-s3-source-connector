@@ -36,4 +36,10 @@ Open command prompt in root directory of the repository, then:
     http://localhost:8080/admin/v2/schemas/public/default/assets/?authoritative=false
     
     ```
+ 5. publish messages into topics
 
+    ```
+     ./publish-messages.sh
+    ```
+
+ 6. check logs of dotnet consumers [dotnet-consumer-container-assets] and [dotnet-consumer-container-people] to see how messages are received

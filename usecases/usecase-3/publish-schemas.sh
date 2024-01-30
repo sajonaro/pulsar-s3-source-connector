@@ -13,6 +13,3 @@ docker compose exec pulsar-server \
 
 
 
-
-
-
