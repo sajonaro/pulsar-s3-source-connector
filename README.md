@@ -11,3 +11,12 @@ This project explores Pulsar IO framework.
 
 ![image](./usecases/usecase-2/fan-out-s3.png)
 [more details](./usecases/usecase-2/README.md)
+
+## use case 3 
+
+[more details](./usecases/usecase-3/README.md)
+
+
+## use case 4 
+
+[more details](./usecases/usecase-4/README.md)

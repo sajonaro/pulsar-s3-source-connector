@@ -366,3 +366,5 @@ target
 *.jar
 
 .vscode
+
+*.log
