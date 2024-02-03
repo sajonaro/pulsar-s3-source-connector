@@ -2,7 +2,7 @@
 
 In this PoC we create sink functions reading from N topics and generating DML statements ( inserts) into Postgressql DB tables. 
 
-Sink function operated in singleton mode, benefiting from common initialize method, where we create DbConnection pool, each subsequent message is written into DB using recycled connections from the pool.
+Sink function operates in singleton mode (--parallelism 1), benefiting from initialize method called once, there we create DbConnection pool and each subsequent message is written into DB using recycled connections from the pool.
 
 Configuration of function is provided via  --user-config option in function deploy cli (pulsar-admin functions create cli https://pulsar.apache.org/docs/next/admin-api-functions/)
 
