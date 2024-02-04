@@ -46,10 +46,10 @@ Open command prompt in root directory of the repository, then:
    ```
 
 
-2. check data has ended up in Database using adminer tool using following paramters 
-      POSTGRES_DB: sinkdb
-      POSTGRES_USER: usr
-      POSTGRES_PASSWORD: 1234567:
+2. check data has ended up in Database using adminer tool:
+   *   POSTGRES_DB: sinkdb
+   *   POSTGRES_USER: usr
+   *   POSTGRES_PASSWORD: 1234567:
     
     ```
     http://localhost:8082
